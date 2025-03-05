@@ -2,19 +2,14 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/Gmax76/urlcheck/pkg/file"
 )
 
 func defaultCheckRedirect(req *http.Request, via []*http.Request) error {
@@ -46,34 +41,8 @@ func main() {
 
 	if strings.HasPrefix(*targetFlag, "s3://") {
 		log.Print("File is located in s3, attempting download")
-		ctx := context.Background()
-		cfg, _ := config.LoadDefaultConfig(ctx)
-		if *bucketRegionFlag != "" {
-			cfg.Region = *bucketRegionFlag
-		}
-		s3Client := s3.NewFromConfig(cfg)
-		u, _ := url.Parse(*targetFlag)
-		result, err := s3Client.GetObject(ctx, &s3.GetObjectInput{
-			Bucket: aws.String(u.Host),
-			Key:    aws.String(u.Path[1:]),
-		})
-		if err != nil {
-			log.Fatalf("Error fetching file from s3: %v", err)
-		}
-		f, err := os.CreateTemp("/tmp", "target")
-		if err != nil {
-			log.Fatalf("failed to create temporary file for s3 target, %v", err)
-		}
-		body, err := io.ReadAll(result.Body)
-		if err != nil {
-			log.Printf("Couldn't read object body from %v. Here's why: %v\n", u.Path[1:], err)
-		}
-		_, err = f.Write(body)
-		if err != nil {
-			log.Fatalf("Could not write to temporary file. Error: %v", err)
-		}
-		f.Close()
-		filename = f.Name()
+		s3Controller := file.NewS3Controller(*bucketRegionFlag)
+		filename = s3Controller.Get(*targetFlag)
 	} else {
 		log.Print("Assuming file is local")
 		filename = *targetFlag
