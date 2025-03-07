@@ -4,7 +4,6 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
-	"strings"
 )
 
 type Crawler interface {
@@ -23,7 +22,7 @@ type CrawlerTarget struct {
 }
 
 type CrawlerParams struct {
-	RawHeaders string
+	Headers http.Header
 }
 
 func defaultCheckRedirect(req *http.Request, via []*http.Request) error {
@@ -31,24 +30,13 @@ func defaultCheckRedirect(req *http.Request, via []*http.Request) error {
 }
 
 func NewCrawler(p CrawlerParams) Crawler {
-	headers := http.Header{}
 	client := &http.Client{
 		CheckRedirect: defaultCheckRedirect,
 	}
 
-	if p.RawHeaders != "" {
-		slog.Debug("Parsing headers")
-		headersRaw := strings.Split(p.RawHeaders, ", ")
-		for _, v := range headersRaw {
-			h := strings.SplitN(v, ":", 2)
-			slog.Debug("Header discovered", "header", h[0])
-			headers.Set(h[0], h[1])
-		}
-	}
-
 	return &crawler{
 		client:  client,
-		headers: headers,
+		headers: p.Headers,
 	}
 }
 
