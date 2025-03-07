@@ -4,6 +4,8 @@ import (
 	"flag"
 	"log/slog"
 	"net/http"
+	"os"
+	"regexp"
 	"strings"
 )
 
@@ -53,9 +55,24 @@ func parseHeaders(h string) (http.Header, error) {
 		headersRaw := strings.Split(h, ", ")
 		for _, v := range headersRaw {
 			hds := strings.SplitN(v, ":", 2)
-			slog.Debug("Header discovered", "header", h[0])
-			headers.Set(hds[0], hds[1])
+			slog.Debug("Header discovered", "header", hds[0])
+
+			headers.Set(hds[0], getTemplatedEnv(hds[1]))
 		}
 	}
 	return headers, nil
+}
+
+func getTemplatedEnv(v string) string {
+	value := v
+	templateRegexp := `^\${(\w)+}$`
+	re := regexp.MustCompile(templateRegexp)
+	matches := re.FindStringSubmatch(v)
+	if len(matches) == 1 {
+		value = os.Getenv(matches[0])
+		if value == "" {
+			slog.Warn("Tried to substitute env var, empty value", "env_var", matches[0])
+		}
+	}
+	return value
 }
