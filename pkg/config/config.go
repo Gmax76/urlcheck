@@ -22,17 +22,17 @@ type ConfigParams struct {
 }
 
 func NewConfig() config {
+	config := config{}
 	cliParams := parseParams()
-	headers, err := parseHeaders(cliParams.HeadersParam)
-	if err != nil {
-		slog.Error("Unable to parse headers")
-	}
+	config.ParserBucket = cliParams.BucketParam
+	config.ParserTargets = cliParams.TargetsParam
 
-	return config{
-		CrawlerHeaders: headers,
-		ParserTargets:  cliParams.TargetsParam,
-		ParserBucket:   cliParams.BucketParam,
+	headers, err := config.parseHeaders(cliParams.HeadersParam)
+	if err != nil {
+		slog.Error("Unable to parse headers", "error", err)
 	}
+	config.CrawlerHeaders = headers
+	return config
 }
 
 func parseParams() ConfigParams {
@@ -48,16 +48,15 @@ func parseParams() ConfigParams {
 	}
 }
 
-func parseHeaders(h string) (http.Header, error) {
+func (c *config) parseHeaders(h string) (http.Header, error) {
 	headers := http.Header{}
+	headers.Set("User-Agent", "Gmax76/urlcheck")
 	if h != "" {
-		slog.Debug("Parsing headers")
 		headersRaw := strings.Split(h, ", ")
 		for _, v := range headersRaw {
 			hds := strings.SplitN(v, ":", 2)
-			slog.Debug("Header discovered", "header", hds[0])
-
 			headers.Set(hds[0], getTemplatedEnv(hds[1]))
+			slog.Debug("Setting header", "header", hds)
 		}
 	}
 	return headers, nil
@@ -65,14 +64,15 @@ func parseHeaders(h string) (http.Header, error) {
 
 func getTemplatedEnv(v string) string {
 	value := v
-	templateRegexp := `^\${(\w)+}$`
+	templateRegexp := `^{{(\w+)}}$`
 	re := regexp.MustCompile(templateRegexp)
 	matches := re.FindStringSubmatch(v)
-	if len(matches) == 1 {
-		value = os.Getenv(matches[0])
-		if value == "" {
-			slog.Warn("Tried to substitute env var, empty value", "env_var", matches[0])
+	if len(matches) == 2 {
+		val, found := os.LookupEnv(matches[1])
+		if !found {
+			slog.Warn("Tried to substitute env var, unset value", "env_var", matches[1])
 		}
+		value = val
 	}
 	return value
 }

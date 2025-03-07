@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"log"
 	"log/slog"
 	"os"
 	"strings"
@@ -11,7 +10,7 @@ import (
 )
 
 type Parser interface {
-	Parse()
+	Parse() []crawler.CrawlerTarget
 }
 
 type ParserParams struct {
@@ -28,11 +27,11 @@ func InitParser(p ParserParams, crawler crawler.Crawler) Parser {
 	slog.Info("Specified target file", "target", p.Target)
 
 	if strings.HasPrefix(p.Target, "s3://") {
-		log.Print("File is located in s3, attempting download")
+		slog.Info("File is located in s3, attempting download")
 		s3Controller := file.NewS3Controller(p.BucketRegion)
 		p.Filename = s3Controller.Get(p.Target)
 	} else {
-		log.Print("Assuming file is local")
+		slog.Info("Assuming file is local")
 		p.Filename = p.Target
 	}
 	// Leaving room here to implement json parser later

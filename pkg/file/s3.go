@@ -3,7 +3,7 @@ package file
 import (
 	"context"
 	"io"
-	"log"
+	"log/slog"
 	"net/url"
 	"os"
 
@@ -29,7 +29,8 @@ func NewS3Controller(region string) S3Controller {
 		cfg.Region = region
 	}
 	if err != nil {
-		log.Fatalf("Could not load AWS config: %v", err)
+		slog.Error("Could not load AWS config", "error", err)
+		os.Exit(1)
 	}
 	s3Client := s3.NewFromConfig(cfg)
 
@@ -42,26 +43,31 @@ func NewS3Controller(region string) S3Controller {
 func (s *s3Controller) Get(filepath string) string {
 	parsedUrl, err := url.Parse(filepath)
 	if err != nil {
-		log.Fatalf("Error parsing s3 url: %v", err)
+		slog.Error("Error parsing s3 url", "error", err)
+		os.Exit(1)
 	}
 	result, err := s.s3Client.GetObject(s.ctx, &s3.GetObjectInput{
 		Bucket: aws.String(parsedUrl.Host),
 		Key:    aws.String(parsedUrl.Path[1:]),
 	})
 	if err != nil {
-		log.Fatalf("Error fetching file from s3: %v", err)
+		slog.Error("Error fetching file from s3", "error", err)
+		os.Exit(1)
 	}
 	f, err := os.CreateTemp("/tmp", "target")
 	if err != nil {
-		log.Fatalf("failed to create temporary file for s3 target, %v", err)
+		slog.Error("failed to create temporary file for s3 target", "error", err)
+		os.Exit(1)
 	}
 	body, err := io.ReadAll(result.Body)
 	if err != nil {
-		log.Printf("Couldn't read object body from %v. Here's why: %v\n", parsedUrl.Path[1:], err)
+		slog.Error("Couldn't read object body.", "error", err)
+		os.Exit(1)
 	}
 	_, err = f.Write(body)
 	if err != nil {
-		log.Fatalf("Could not write to temporary file. Error: %v", err)
+		slog.Error("Could not write to temporary file.", "error", err)
+		os.Exit(1)
 	}
 	f.Close()
 	return f.Name()

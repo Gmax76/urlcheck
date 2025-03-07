@@ -7,7 +7,7 @@ import (
 )
 
 type Crawler interface {
-	Fetch(CrawlerTarget) *CrawlerTarget
+	Fetch(*CrawlerTarget)
 }
 
 type crawler struct {
@@ -40,7 +40,7 @@ func NewCrawler(p CrawlerParams) Crawler {
 	}
 }
 
-func (c *crawler) Fetch(t CrawlerTarget) *CrawlerTarget {
+func (c *crawler) Fetch(t *CrawlerTarget) {
 	req, err := http.NewRequest(t.Method, t.Url, nil)
 	if err != nil {
 		log.Printf("Error forging request: %v", err)
@@ -51,5 +51,4 @@ func (c *crawler) Fetch(t CrawlerTarget) *CrawlerTarget {
 		slog.Error("Error fetching target", "target", t, "error", err)
 	}
 	t.Status = resp.Status
-	return &t
 }

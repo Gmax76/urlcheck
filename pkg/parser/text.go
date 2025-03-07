@@ -2,7 +2,6 @@ package parser
 
 import (
 	"bufio"
-	"log"
 	"log/slog"
 	"os"
 	"strings"
@@ -24,10 +23,12 @@ func NewTextParser(filepath string, crawler crawler.Crawler) Parser {
 	}
 }
 
-func (p *textParser) Parse() {
+func (p *textParser) Parse() []crawler.CrawlerTarget {
+	results := []crawler.CrawlerTarget{}
 	target, err := os.Open(p.filepath)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		slog.Error("Error while opening file", "error", err)
+		os.Exit(1)
 	}
 	defer target.Close()
 	scanner := bufio.NewScanner(target)
@@ -36,7 +37,10 @@ func (p *textParser) Parse() {
 		curLine := scanner.Text()
 		args := strings.Split(curLine, " ")
 		slog.Info("Fetching", "url", args)
-		target := p.crawler.Fetch(crawler.CrawlerTarget{Method: args[0], Url: args[1]})
+		target := crawler.CrawlerTarget{Method: args[0], Url: args[1]}
+		p.crawler.Fetch(&target)
 		slog.Info("Fetched target", "url", target.Url, "status", target.Status)
+		results = append(results, target)
 	}
+	return results
 }
