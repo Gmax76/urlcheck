@@ -7,6 +7,7 @@ import (
 
 	"github.com/Gmax76/urlcheck/pkg/crawler"
 	"github.com/Gmax76/urlcheck/pkg/file"
+	"github.com/Gmax76/urlcheck/pkg/reporter"
 )
 
 type Parser interface {
@@ -19,7 +20,7 @@ type ParserParams struct {
 	BucketRegion string
 }
 
-func InitParser(p ParserParams, crawler crawler.Crawler) Parser {
+func InitParser(p ParserParams, crawler *crawler.Crawler, reporter *reporter.Reporter) Parser {
 	if p.Target == "" {
 		slog.Error("Target not defined, please specify a targets file")
 		os.Exit(1)
@@ -35,6 +36,6 @@ func InitParser(p ParserParams, crawler crawler.Crawler) Parser {
 		p.Filename = p.Target
 	}
 	// Leaving room here to implement json parser later
-	parser := NewTextParser(p.Filename, crawler)
+	parser := NewTextParser(p.Filename, crawler, reporter)
 	return parser
 }
