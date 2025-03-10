@@ -6,11 +6,7 @@ import (
 	"net/http"
 )
 
-type Crawler interface {
-	Fetch(*CrawlerTarget)
-}
-
-type crawler struct {
+type Crawler struct {
 	headers http.Header
 	client  *http.Client
 }
@@ -34,13 +30,13 @@ func NewCrawler(p CrawlerParams) Crawler {
 		CheckRedirect: defaultCheckRedirect,
 	}
 
-	return &crawler{
+	return Crawler{
 		client:  client,
 		headers: p.Headers,
 	}
 }
 
-func (c *crawler) Fetch(t *CrawlerTarget) {
+func (c *Crawler) Fetch(t *CrawlerTarget) {
 	req, err := http.NewRequest(t.Method, t.Url, nil)
 	if err != nil {
 		log.Printf("Error forging request: %v", err)

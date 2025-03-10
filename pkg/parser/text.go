@@ -7,19 +7,22 @@ import (
 	"strings"
 
 	"github.com/Gmax76/urlcheck/pkg/crawler"
+	"github.com/Gmax76/urlcheck/pkg/reporter"
 )
 
 type textParser struct {
 	filepath string
 	results  string
-	crawler  crawler.Crawler
+	crawler  *crawler.Crawler
+	reporter *reporter.Reporter
 }
 
-func NewTextParser(filepath string, crawler crawler.Crawler) Parser {
+func NewTextParser(filepath string, crawler *crawler.Crawler, reporter *reporter.Reporter) Parser {
 	return &textParser{
 		filepath: filepath,
 		results:  "",
 		crawler:  crawler,
+		reporter: reporter,
 	}
 }
 
@@ -37,10 +40,9 @@ func (p *textParser) Parse() []crawler.CrawlerTarget {
 		curLine := scanner.Text()
 		args := strings.Split(curLine, " ")
 		slog.Info("Fetching", "url", args)
-		target := crawler.CrawlerTarget{Method: args[0], Url: args[1]}
-		p.crawler.Fetch(&target)
-		slog.Info("Fetched target", "url", target.Url, "status", target.Status)
-		results = append(results, target)
+		crawlTarget := crawler.CrawlerTarget{Method: args[0], Url: args[1]}
+		p.crawler.Fetch(&crawlTarget)
+		p.reporter.AppendResult(&crawlTarget)
 	}
 	return results
 }

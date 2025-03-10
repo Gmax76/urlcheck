@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type config struct {
+type Config struct {
 	CrawlerHeaders http.Header
 	ParserTargets  string
 	ParserBucket   string
@@ -21,8 +21,8 @@ type ConfigParams struct {
 	HeadersParam string
 }
 
-func NewConfig() config {
-	config := config{}
+func NewConfig() Config {
+	config := Config{}
 	cliParams := parseParams()
 	config.ParserBucket = cliParams.BucketParam
 	config.ParserTargets = cliParams.TargetsParam
@@ -48,7 +48,7 @@ func parseParams() ConfigParams {
 	}
 }
 
-func (c *config) parseHeaders(h string) (http.Header, error) {
+func (c *Config) parseHeaders(h string) (http.Header, error) {
 	headers := http.Header{}
 	headers.Set("User-Agent", "Gmax76/urlcheck")
 	if h != "" {
