@@ -55,7 +55,7 @@ func (c *config) parseHeaders(h string) (http.Header, error) {
 		headersRaw := strings.Split(h, ", ")
 		for _, v := range headersRaw {
 			hds := strings.SplitN(v, ":", 2)
-			headers.Set(hds[0], getTemplatedEnv(hds[1]))
+			headers.Set(hds[0], getTemplatedEnv(strings.TrimSpace(hds[1])))
 			slog.Debug("Setting header", "header", hds)
 		}
 	}
